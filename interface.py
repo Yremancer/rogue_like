@@ -59,28 +59,12 @@ class Interface:
             }
 
         ]
-
-        # self.stdscr.clear()
-        # self.stdscr.addstr(0, 0, "Настройки")
-        # self.stdscr.addstr(1, 0, f"1. Ширина карты: {first_settings['map_width']} Высота карты: {first_settings['map_height']}, Количество комнат: {first_settings['room_count']} Ширина комнаты: {first_settings['room_width']} Высота комнаты: {first_settings['room_height']}")
-        # self.stdscr.addstr(2, 0, f"2. Ширина карты: {second_settings['map_width']} Высота карты: {second_settings['map_height']}, Количество комнат: {second_settings['room_count']} Ширина комнаты: {second_settings['room_width']} Высота комнаты: {second_settings['room_height']}")
-        # self.stdscr.refresh()
-
-        # while True:
-        #     key = self.__get_input()
-
-        #     if key == ord('1'):
-        #         return first_settings
-            
-        #     elif key == ord('2'):
-        #         return second_settings
-            
-        #     elif key == ord('q'):
-        #         return None
             
 
         choices = [f"Ширина карты: {settings[0]['map_width']} Высота карты: {settings[0]['map_height']}, Количество комнат: {settings[0]['room_count']}, Ширина комнаты: {settings[0]['room_width']}, Высота комнаты: {settings[0]['room_height']}",
-                   f"Ширина карты: {settings[1]['map_width']} Высота карты: {settings[1]['map_height']}, Количество комнат: {settings[1]['room_count']}, Ширина комнаты: {settings[1]['room_width']}, Высота комнаты: {settings[1]['room_height']}"]
+                   f"Ширина карты: {settings[1]['map_width']} Высота карты: {settings[1]['map_height']}, Количество комнат: {settings[1]['room_count']}, Ширина комнаты: {settings[1]['room_width']}, Высота комнаты: {settings[1]['room_height']}",
+                   f"Выход",
+                   ]
         choice = 0
 
         self.stdscr.clear()
@@ -107,6 +91,8 @@ class Interface:
                 
             elif key == 10:
                 self.stdscr.clear()
+                if choice == len(choices) - 1:
+                    return None
                 return settings[choice]
 
     def draw_map(self):
