@@ -63,15 +63,15 @@ class Map:
     view: str = " "
     width: int
     height: int 
-    roomCount: int
+    room_count: int
     rooms: list[Room]
     coridors: list[Coridor]
     map: list[ShadedPoint]
 
-    def __init__(self, roomCount, width, height):
+    def __init__(self, room_count, width, height, room_width, room_height):
         self.width = width
         self.height = height
-        self.roomCount = roomCount
+        self.room_count = room_count
         self.rooms = []
         self.coridors = []
         self.map = []
@@ -80,15 +80,15 @@ class Map:
             for x in range(1, self.width+1):
                 self.map.append(ShadedPoint(x, y, self.view))
 
-        self.__generate_rooms()
+        self.__generate_rooms(room_width, room_height)
         self.__generate_corridors()
         
         
-    def __generate_rooms(self):
-        while len(self.rooms) < self.roomCount:
+    def __generate_rooms(self, room_width, room_height):
+        while len(self.rooms) < self.room_count:
             point = randPoint(self.width, self.height)
-            width = random.randint(5, 9)
-            height = random.randint(5, 9)
+            width = random.randint(room_width, room_height)
+            height = random.randint(room_width, room_height)
             
             
             if point.x + width > self.width or point.y + height > self.height:

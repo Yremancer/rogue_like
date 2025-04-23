@@ -28,10 +28,12 @@ def randPoint(x_lim, y_lim) -> Point:
 class ShadedPoint(Point):
 
     symbol: str
+    shaded: bool
 
-    def __init__(self, x, y, symbol):
+    def __init__(self, x, y, symbol, shaded = False):
         super(). __init__(x,y)
         self.symbol = symbol
+        self.shaded = shaded
 
     def __str__(self):
         return self.symbol
