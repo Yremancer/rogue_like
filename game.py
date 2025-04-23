@@ -13,7 +13,7 @@ class Game:
     def __init__(self, map_width, map_height, room_count, room_width, room_height):
 
         self.map = Map(room_count, map_width, map_height, room_width, room_height)
-        self.hero = Hero(self.map)
+        self.hero = Hero("hero", self.map)
 
     
 
