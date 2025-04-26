@@ -1,15 +1,23 @@
 import curses
 
-
 class Interface:
-    def __init__(self, stdscr, game = None):
+
+    def __statistics(self, map, hero):
+        return [
+                f"╔" + "═" * (map.width+2) + "╗",
+                f"║ {'Статистика'.center(map.width)} ║",
+                f"║ {('Здоровье:' + str(hero.current_health) + '/' + str(hero.max_health)).ljust(map.width)} ║",
+                f"║ {('█' * int((hero.current_health / hero.max_health) * map.width) + '░' * (map.width - int((hero.current_health / hero.max_health) * map.width))).ljust(map.width)} ║",
+                f"╚" + "═" * (map.width+2) + "╝",
+                ]
+
+    def __init__(self, stdscr):
         self.stdscr = stdscr
-        self.game = game
         self.stdscr.timeout(100)
         curses.curs_set(0)
 
 
-    def draw_menu(self):
+    def display_menu(self):
 
         choices = ["Начать игру", "Настройки", "Выход"]
         choice = 0
@@ -41,7 +49,7 @@ class Interface:
                 return choice
 
 
-    def draw_settings(self):
+    def display_settings(self):
         settings = [
             {
                 "map_width": 70,
@@ -95,31 +103,46 @@ class Interface:
                     return None
                 return settings[choice]
 
-    def draw_map(self):
+    def display_game(self, map, hero, enemy):
         
-        if self.game is None:
-            raise ValueError("Игра не установлена")
+        curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+        curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
+
 
         while True:
-            for point in self.game.map.map:
-                if point.shaded:
-                    self.stdscr.addstr(point.y, point.x, self.game.hero.view)
-                else:
-                    self.stdscr.addstr(point.y, point.x, point.symbol)
+            last_point_y = 0
+            for point in map.map:
+                if last_point_y <= point.y:
+                    last_point_y = point.y
+
+                self.stdscr.addstr(point.y, point.x, point.symbol)
             self.stdscr.refresh()
+
+            for y, string in enumerate(self.__statistics(map, hero)):
+                if y == 3:
+                    for x, char in enumerate(string):
+                        if char == '█':
+                            self.stdscr.addstr(last_point_y + y + 1, x, char, curses.color_pair(2))
+                        elif char == '░':
+                            self.stdscr.addstr(last_point_y + y + 1, x, char, curses.color_pair(1))
+                else:
+                    self.stdscr.addstr(last_point_y + y + 1, 0, string)
 
             key = self.__get_input()
 
             if key == ord('d'):
-                self.game.hero.move(1, 0)
+                hero.move(1, 0)
+                hero.take_damage(50)
             elif key == ord('a'):
-                self.game.hero.move(-1, 0)
+                hero.move(-1, 0)
             elif key == ord('w'):
-                self.game.hero.move(0, -1)
+                hero.move(0, -1)
             elif key == ord('s'):
-                self.game.hero.move(0, 1)
+                hero.move(0, 1)
             elif key == ord('q'):
                 break
+            
+            enemy.move_randomly()
 
     def __get_input(self):
         return self.stdscr.getch()

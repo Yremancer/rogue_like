@@ -24,7 +24,7 @@ class Character(ABC):
         self.position = random.choice(available_points)
 
         index = game_map.map.index(self.position)
-        game_map.map[index] = ShadedPoint(self.position.x, self.position.y, self.view)
+        game_map.map[index] = ShadedPoint(self.position.x, self.position.y, self.view, )
     
     @abstractmethod
     def attack(self, enemy):
@@ -44,7 +44,7 @@ class Hero(Character):
     weapon: Weapon
 
     def __init__(self, name, map, max_health = 100):
-        super().__init__(name, map,  max_health, "@")
+        super().__init__(name, map,  max_health, "☻")
         self.inventory = Inventory()
         self.weapon = None
 
@@ -89,8 +89,8 @@ class Enemy(Character):
 
     damage: int
     
-    def init(self, name, map, max_health=100):
-        super().init(name, map , max_health, "E")
+    def __init__(self, name, map, max_health=100):
+        super().__init__(name, map , max_health, "E")
 
     def move_randomly(self):
         direction = random.choice([(1, 0), (-1, 0), (0, 1), (0, -1)])
