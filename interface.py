@@ -125,6 +125,8 @@ class Interface:
                             self.stdscr.addstr(last_point_y + y + 1, x, char, curses.color_pair(2))
                         elif char == '░':
                             self.stdscr.addstr(last_point_y + y + 1, x, char, curses.color_pair(1))
+                        else:
+                            self.stdscr.addstr(last_point_y + y + 1, x, char)
                 else:
                     self.stdscr.addstr(last_point_y + y + 1, 0, string)
 
@@ -143,6 +145,7 @@ class Interface:
                 break
             
             enemy.move_randomly()
+            
 
     def __get_input(self):
         return self.stdscr.getch()
