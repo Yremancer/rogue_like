@@ -2,13 +2,16 @@ from abc import ABC, abstractmethod
 
 
 class Item(ABC):
-    pass
+    def __str__(self):
+        return "8"
 
 class Weapon(Item):
-    pass
 
     def __str__(self):
         return "Оружие"
 
 class Inventory:
-    pass
+
+    def __init__(self):
+        self.items = [Item()]
+        self.size = 5

@@ -1,24 +1,6 @@
 import curses
-from points import Point 
 
 class Interface:
-
-    def __statistics(self, map, hero):
-        return [
-                f"╔" + "═" * (map.width+2) + "╗",
-                f"║ {'Статистика'.center(map.width)} ║",
-                f"║ {('Здоровье:' + str(hero.current_health) + '/' + str(hero.max_health)).ljust(map.width)} ║",
-                f"║ {('█' * int((hero.current_health / hero.max_health) * map.width) + '░' * (map.width - int((hero.current_health / hero.max_health) * map.width))).ljust(map.width)} ║",
-                f"║ {('Оружие:' + str(hero.weapon)).ljust(map.width)} ║",
-                f"╚" + "═" * (map.width+2) + "╝",
-                ]
-    def __guide(self):
-        return [
-                "Управление:",
-                "w - вверх, s - вниз, a - влево, d - вправо",
-                "e - инвентарь",
-                "q - выход"
-            ]
 
     def __init__(self, stdscr):
         self.stdscr = stdscr
@@ -94,7 +76,6 @@ class Interface:
 
         self.stdscr.clear()
 
-
         while True:
 
             for i in range(len(choices)):
@@ -130,52 +111,12 @@ class Interface:
 
 
         while True:
-            cords = [
-                # Центр и радиус 1
-                (0, 0), (0, 1), (1, 0), (-1, 0), (0, -1),
-                (1, 1), (-1, -1), (-1, 1), (1, -1),
-                # Радиус 2
-                (0, 2), (2, 0), (0, -2), (-2, 0),
-                (1, 2), (2, 1), (2, -1), (1, -2),
-                (-1, -2), (-2, -1), (-2, 1), (-1, 2),
-                (2, 2), (-2, -2), (-2, 2), (2, -2)
-            ]
-            for cord in cords:
-                pos = Point(hero.position.x + cord[0], hero.position.y + cord[1])
-                if pos in map.map:
-                    index = map.map.index(pos)
-                    map.map[index].is_visible = True
-
+            self.__update_visibility(map, hero)
 
             last_point_y = 0
-            for point in map.map:
-                if last_point_y <= point.y:
-                    last_point_y = point.y
-                if point.is_visible:
-                    if point.shaded is not None:
-                        self.stdscr.addstr(point.y, point.x, point.shaded)
-                    else:
-                        self.stdscr.addstr(point.y, point.x, point.symbol)                    
-            self.stdscr.refresh()
-
-            for y, string in enumerate(self.__statistics(map, hero)):
-                last_point_y += 1
-                if y == 3:
-                    for x, char in enumerate(string):
-                        if char == '█':
-                            self.stdscr.addstr(last_point_y + 1, x, char, curses.color_pair(2))
-                        elif char == '░':
-                            self.stdscr.addstr(last_point_y + 1, x, char, curses.color_pair(1))
-                        else:
-                            self.stdscr.addstr(last_point_y + 1, x, char)
-                else:
-                    self.stdscr.addstr(last_point_y + 1, 0, string)
-
-            for y, string in enumerate(self.__guide()):
-                last_point_y += 1
-                self.stdscr.addstr(last_point_y + 1, 0, string)
-            self.stdscr.refresh()
-
+            last_point_y = self.__draw_map(map, last_point_y)
+            last_point_y = self.__draw_statistic(map, hero, last_point_y)
+            last_point_y = self.__draw_guide(last_point_y)
 
             key = self.__get_input()
 
@@ -195,17 +136,103 @@ class Interface:
             
             enemy.move_randomly()
 
+
     def display_inventory(self, hero):
         while True:
             self.stdscr.clear()
             self.stdscr.addstr(0, 0, "Инвентарь:")
+
+            for i in range(hero.inventory.size):
+                x = i * 5 + 1
+                y = 1
+                item = hero.inventory.items[i] if i < len(hero.inventory.items) else None
+                self.__draw_inventory_slot(x, y, item)
+
+            self.stdscr.addstr(4, 0, "Нажмите 'q' для выхода из инвентаря")
             self.stdscr.refresh()
 
-            key = self.__get_input()
-
-            if key == ord('q'):
+            if self.__get_input() == ord('q'):
                 self.stdscr.clear()
                 break
 
+
+    def __draw_inventory_slot(self, x, y, item=None):
+
+        self.stdscr.addstr(y, x, "╔═══╗")
+        if item is not None:
+            self.stdscr.addstr(y + 1, x, f"║ {str(item)} ║")
+        else:
+            self.stdscr.addstr(y + 1, x, "║   ║")
+        self.stdscr.addstr(y + 2, x, "╚═══╝")
+
+
     def __get_input(self):
         return self.stdscr.getch()
+    
+
+    def __update_visibility(self, map, hero):
+        cords = []
+
+        for x in range(-3, 4):
+            for y in range(-3, 4):
+                    cords.append((x, y))
+        
+        for point in map.map:
+            for dx, dy in cords:
+                if (point.x == hero.position.x + dx and 
+                    point.y == hero.position.y + dy):
+                    point.is_visible = True
+                    break
+
+
+    def __draw_map(self, map, last_point_y):
+        for point in map.map:
+            if last_point_y <= point.y:
+                last_point_y = point.y
+            if point.is_visible:
+                if point.shaded is not None:
+                    self.stdscr.addstr(point.y, point.x, point.shaded)
+                else:
+                    self.stdscr.addstr(point.y, point.x, point.symbol)                    
+            self.stdscr.refresh()
+        return last_point_y
+
+
+    def __draw_statistic(self, map, hero, last_point_y):
+        statistics = [
+                f"╔" + "═" * (map.width+2) + "╗",
+                f"║ {'Статистика'.center(map.width)} ║",
+                f"║ {('Здоровье:' + str(hero.current_health) + '/' + str(hero.max_health)).ljust(map.width)} ║",
+                f"║ {('█' * int((hero.current_health / hero.max_health) * map.width) + '░' * (map.width - int((hero.current_health / hero.max_health) * map.width))).ljust(map.width)} ║",
+                f"║ {('Оружие:' + str(hero.weapon)).ljust(map.width)} ║",
+                f"╚" + "═" * (map.width+2) + "╝",
+                ]
+
+        for y, string in enumerate(statistics):
+                last_point_y += 1
+                if y == 3:
+                    for x, char in enumerate(string):
+                        if char == '█':
+                            self.stdscr.addstr(last_point_y + 1, x, char, curses.color_pair(2))
+                        elif char == '░':
+                            self.stdscr.addstr(last_point_y + 1, x, char, curses.color_pair(1))
+                        else:
+                            self.stdscr.addstr(last_point_y + 1, x, char)
+                else:
+                        self.stdscr.addstr(last_point_y + 1, 0, string)
+        return last_point_y
+    
+
+    def __draw_guide(self, last_point_y):
+
+        guide = [
+                "Управление:",
+                "w - вверх, s - вниз, a - влево, d - вправо",
+                "e - инвентарь",
+                "q - выход"
+            ]
+
+        for y, string in enumerate(guide):
+                last_point_y += 1
+                self.stdscr.addstr(last_point_y + 1, 0, string)
+        self.stdscr.refresh()
