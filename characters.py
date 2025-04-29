@@ -4,14 +4,12 @@ from abc import ABC, abstractmethod
 from items import *
 
 class Character(ABC):
-
     name: str
     view: str
     position: ShadedPoint
     game_map: Map
     max_health: int     
     current_health: int   
-
     
     def __init__(self, name, game_map, max_health, view = None):
         self.name = name
@@ -34,23 +32,33 @@ class Character(ABC):
     def take_damage(self, damage):
         self.current_health -= damage
         if self.current_health <= 0:
-            print(f"{self.name} погиб!")
+            self.current_health = 0
+            print(f"{self.name} погиб! Игра окончена. Начните заново.")
+            self.game_over()
         else:
             print(f"{self.name} получил {damage} урона. Осталось здоровья: {self.current_health}/{self.max_health}")
+    
+    def game_over(self):
+        pass
+
+    def is_adjacent(self, other):
+        return (abs(self.position.x - other.position.x) <= 1 and 
+                abs(self.position.y - other.position.y) <= 1 and
+                not (self.position.x == other.position.x and 
+                     self.position.y == other.position.y))
 
 
 class Hero(Character):
-
     inventory: Inventory
     weapon: Weapon
+    is_alive: bool = True
 
     def __init__(self, name, map, max_health = 100):
-        super().__init__(name, map,  max_health, "☻")
+        super().__init__(name, map, max_health, "☻")
         self.inventory = Inventory()
         self.weapon = Weapon()
 
     def move(self, x,y):
-
         index = next((i for i, p in enumerate(self.game_map.map) if p == Point(self.position.x+x, self.position.y+y)), None)
 
         if index == None:
@@ -59,11 +67,9 @@ class Hero(Character):
         position = self.game_map.map[index]
 
         if (position.symbol == Room.view or position.symbol == Coridor.view) and position.shaded == None:
-
             self.position.shaded = None
             position.shaded = self.view
             self.position = position
-
     
     def pick_up_item(self, item):
         print(f"{self.name} подобрал {item}")
@@ -80,14 +86,13 @@ class Hero(Character):
             enemy.take_damage(self.weapon.damage)
         else:
             print(f"{self.name} пытается атаковать, но у него нет оружия!")
-        
+
 
 class Enemy(Character):
-
-    damage: int
+    damage: int 
     
     def __init__(self, name, map, max_health=100):
-        super().__init__(name, map , max_health, "E")
+        super().__init__(name, map, max_health, "E")
 
     def move_randomly(self):
         direction = random.choice([(1, 0), (-1, 0), (0, 1), (0, -1)])
@@ -99,11 +104,13 @@ class Enemy(Character):
         position = self.game_map.map[index]
 
         if (position.symbol == Room.view or position.symbol == Coridor.view) and position.shaded == None:
-
             self.position.shaded = None
             position.shaded = self.view
             self.position = position
 
     def attack(self, hero):
-        print(f"{self.name} атакует {hero.name}!")
-        hero.take_damage(self.damage)
+        if self.is_adjacent(hero):
+            print(f"{self.name} атакует {hero.name}!")
+            hero.take_damage(self.damage)
+        else:
+            print(f"{self.name} хочет атаковать, но не может - герой слишком далеко!")
