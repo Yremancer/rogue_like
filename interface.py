@@ -130,14 +130,16 @@ class Interface:
             elif key == ord('s'):
                 hero.move(0, 1)
             elif key == ord('e'):
-                self.display_inventory(hero)
+                self.__display_inventory(hero)
             elif key == ord('q'):
                 break
             
             enemy.move_randomly()
+            if hero.on_exit():
+                self.__win_screen()
+                break
 
-
-    def display_inventory(self, hero):
+    def __display_inventory(self, hero):
         while True:
             self.stdscr.clear()
             self.stdscr.addstr(0, 0, "Инвентарь:")
@@ -154,6 +156,83 @@ class Interface:
             if self.__get_input() == ord('q'):
                 self.stdscr.clear()
                 break
+
+    def __win_screen(self):
+        # Инициализация цветовых пар
+        curses.init_pair(3, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+        curses.init_pair(4, curses.COLOR_CYAN, curses.COLOR_BLACK)
+        curses.init_pair(5, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
+        curses.init_pair(6, curses.COLOR_RED, curses.COLOR_BLACK)
+
+        # Текст "ПОБЕДА!" большими буквами
+        victory_text = [
+            "██████╗  ██████╗ ██████╗ ███████╗██████╗  █████╗ ",
+            "██╔══██╗██╔═══██╗██╔══██╗██╔════╝██╔══██╗██╔══██╗",
+            "██████╔╝██║   ██║██████╔╝█████╗  ██████╔╝███████║",
+            "██╔═══╝ ██║   ██║██╔═══╝ ██╔══╝  ██╔═══╝ ██╔══██║",
+            "██║     ╚██████╔╝██║     ███████╗██║     ██║  ██║",
+            "╚═╝      ╚═════╝ ╚═╝     ╚══════╝╚═╝     ╚═╝  ╚═╝",
+        ]
+
+        footer_text = "✧ Нажмите 'пробел' для выхода ✧"
+
+        # Украшения
+        decorations = "✨ 🌟 💫 ⭐ ⚝ ✯ ✨ 🌟 💫 ⭐ ⚝ ✯"
+        sparkles = "｡･ﾟﾟ･｡･ﾟ✧･ﾟ･｡･ﾟﾟ･｡･ﾟ✧･ﾟ･｡"
+
+        # Центрирование текста
+        screen_height, screen_width = self.stdscr.getmaxyx()
+        start_y = (screen_height - len(victory_text)) // 2
+        start_x = (screen_width - len(victory_text[0])) // 2
+
+        animation_counter = 0
+        while True:
+            self.stdscr.clear()
+
+            # Отрисовка верхних и нижних украшений
+            for i, char in enumerate(decorations):
+                color = 3 + ((i + animation_counter) % 4)
+                try:
+                    # Верхние украшения
+                    self.stdscr.addstr(start_y - 2, start_x + i * 4, char, curses.color_pair(color))
+                    # Нижние украшения
+                    self.stdscr.addstr(start_y + len(victory_text) + 2, start_x + i * 4, char, curses.color_pair(color))
+                except curses.error:
+                    pass
+
+            # Отрисовка боковых мерцающих искр
+            for i, spark in enumerate(sparkles):
+                color = 3 + ((i + animation_counter) % 4)
+                try:
+                    # Левая сторона
+                    self.stdscr.addstr(start_y + i % len(victory_text), start_x - 6, spark, curses.color_pair(color))
+                    # Правая сторона
+                    self.stdscr.addstr(start_y + i % len(victory_text), start_x + len(victory_text[0]) + 4, spark, curses.color_pair(color))
+                except curses.error:
+                    pass
+
+            # Отрисовка текста "ПОБЕДА!"
+            for i, line in enumerate(victory_text):
+                try:
+                    self.stdscr.addstr(start_y + i, start_x, line, curses.color_pair(5 if i % 2 == 0 else 6))
+                except curses.error:
+                    pass
+
+            # Отрисовка текста для выхода
+            try:
+                self.stdscr.addstr(start_y + len(victory_text) + 4, start_x - len(footer_text) // 2 + len(victory_text[0]) // 2, footer_text, curses.color_pair(4))
+            except curses.error:
+                pass
+
+            self.stdscr.refresh()
+            animation_counter += 1
+
+            # Проверка выхода
+            key = self.__get_input()
+            if key == ord(' '):
+                break
+
+        self.stdscr.clear()
 
 
     def __draw_inventory_slot(self, x, y, item=None):

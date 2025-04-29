@@ -61,6 +61,7 @@ class Coridor:
 
 class Map:
     view: str = " "
+    exit_view: str = "𐌢"
     width: int
     height: int 
     room_count: int
@@ -82,6 +83,7 @@ class Map:
 
         self.__generate_rooms(room_width, room_height)
         self.__generate_corridors()
+        self.__generate_exit()
         
         
     def __generate_rooms(self, room_width, room_height):
@@ -125,8 +127,6 @@ class Map:
                 continue
             rand_point_second = random.choice(valid_points)
 
-            # print(f"({rand_point_first.x}, {rand_point_first.y}) ; ({rand_point_second.x}, {rand_point_second.y})")
-
             index = self.map.index(rand_point_first)
             self.map[index] = ShadedPoint(rand_point_first.x, rand_point_first.y, Coridor.view)
             index = self.map.index(rand_point_second)
@@ -167,7 +167,6 @@ class Map:
         while len(open) != 0:
             current_node = min(open, key=lambda node: node.f)
 
-            # if (current_node.content.x, current_node.content.y) == (end.x, end.y):
             if current_node.content == end:
                 path = []
                 while current_node:
@@ -227,8 +226,12 @@ class Map:
         print("Путь не найден!")
         return []
 
-    def display(self):
-        for index, point in enumerate(self.map):
-            print(point, end="")
-            if (index + 1) % self.width == 0:
-                print()
+    def __generate_exit(self):
+        possible_points = []
+        for room in self.rooms:
+            for point in room.board:
+                possible_points.append(point)
+
+        exit_point = random.choice(possible_points)
+        index = self.map.index(exit_point)
+        self.map[index] = ShadedPoint(exit_point.x, exit_point.y, self.exit_view)
