@@ -79,7 +79,7 @@ class Hero(Character):
             print(f"{self.name} атакует {enemy.name} с {self.weapon}!")
             enemy.take_damage(self.weapon.damage)
         else:
-            print(f"{self.name} пытается атаковать, но у него нет оружия!")
+            print(f"{self.name} пытается атаковать, но у него нет оружия")
     
     def on_exit(self):
         if self.position.symbol == self.game_map.exit_view:
