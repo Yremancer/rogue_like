@@ -58,7 +58,7 @@ class Hero(Character):
 
         position = self.game_map.map[index]
 
-        if (position.symbol == Room.view or position.symbol == Coridor.view) and position.shaded == None:
+        if position.symbol != Map.view and position.shaded == None:
 
             self.position.shaded = None
             position.shaded = self.view
@@ -80,6 +80,12 @@ class Hero(Character):
             enemy.take_damage(self.weapon.damage)
         else:
             print(f"{self.name} пытается атаковать, но у него нет оружия!")
+    
+    def on_exit(self):
+        if self.position.symbol == self.game_map.exit_view:
+            return True
+        return False
+
         
 
 class Enemy(Character):
@@ -98,7 +104,7 @@ class Enemy(Character):
 
         position = self.game_map.map[index]
 
-        if (position.symbol == Room.view or position.symbol == Coridor.view) and position.shaded == None:
+        if position.symbol != Map.view and position.shaded == None:
 
             self.position.shaded = None
             position.shaded = self.view

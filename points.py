@@ -28,7 +28,7 @@ def randPoint(x_lim, y_lim) -> Point:
 class ShadedPoint(Point):
 
     symbol: str
-    is_visible: bool = False
+    is_visible: bool = True
     shaded: str
 
     def __init__(self, x, y, symbol, shaded = None):
