@@ -1,5 +1,5 @@
 from points import *
-
+from items import *
 
 __all__ = ['Room', 'Coridor', 'Map', 'Point', 'ShadedPoint']
 
@@ -84,6 +84,7 @@ class Map:
         self.__generate_rooms(room_width, room_height)
         self.__generate_corridors()
         self.__generate_exit()
+        self.__spawn_items()
         
         
     def __generate_rooms(self, room_width, room_height):
@@ -235,3 +236,20 @@ class Map:
         exit_point = random.choice(possible_points)
         index = self.map.index(exit_point)
         self.map[index] = ShadedPoint(exit_point.x, exit_point.y, self.exit_view)
+
+    def __spawn_items(self):
+        possible_points = []
+        for room in self.rooms:
+            for point in room.coordinates:
+                possible_points.append(point)
+
+        spawn_items_count = 0
+
+        while spawn_items_count < 3:
+            point = random.choice(possible_points)
+            item = Part_weapon()
+            index = self.map.index(point)
+            if self.map[index].shaded is None:
+                self.map[index] = ShadedPoint(point.x, point.y, point.symbol, item.view)
+                spawn_items_count += 1
+        

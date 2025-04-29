@@ -2,16 +2,33 @@ from abc import ABC, abstractmethod
 
 
 class Item(ABC):
-    def __str__(self):
-        return "8"
+    view: str
+    def __init__(self, view = None):
+        self.view = view
+
+
+class Part_weapon(Item):
+    def __init__(self):
+        super().__init__("1")
 
 class Weapon(Item):
+    name: str
+    damage: int
 
-    def __str__(self):
-        return "Оружие"
+    def __init__(self, name, view, damage = 10):
+        self.name = name
+        self.damage = damage
+        super().__init__(view)
 
 class Inventory:
 
-    def __init__(self):
-        self.items = [Item()]
-        self.size = 5
+    items: list[Item]
+    size: int
+
+    def __init__(self, size = 5):
+        self.items = []
+        self.size = size
+
+    def add_item(self, item: Item):
+        if len(self.items) < self.size:
+            self.items.append(item)

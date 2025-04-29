@@ -2,6 +2,7 @@ from map import *
 from points import *
 from abc import ABC, abstractmethod
 from items import *
+import time
 
 class Character(ABC):
 
@@ -11,6 +12,7 @@ class Character(ABC):
     game_map: Map
     max_health: int     
     current_health: int   
+    is_dead: bool = False
 
     
     def __init__(self, name, game_map, max_health, view = None):
@@ -30,13 +32,24 @@ class Character(ABC):
     @abstractmethod
     def attack(self, enemy):
         pass
+    
+    
+    def __dead(self):
+        self.position.shaded = None
+        self.position = None
+        self.is_dead = True
 
     def take_damage(self, damage):
         self.current_health -= damage
         if self.current_health <= 0:
-            print(f"{self.name} погиб!")
-        else:
-            print(f"{self.name} получил {damage} урона. Осталось здоровья: {self.current_health}/{self.max_health}")
+            self.current_health = 0
+            self.__dead()
+
+    def is_adjacent(self, other):
+        return (abs(self.position.x - other.position.x) <= 1 and 
+                abs(self.position.y - other.position.y) <= 1 and
+                not (self.position.x == other.position.x and 
+                     self.position.y == other.position.y))
 
 
 class Hero(Character):
@@ -47,7 +60,7 @@ class Hero(Character):
     def __init__(self, name, map, max_health = 100):
         super().__init__(name, map,  max_health, "☻")
         self.inventory = Inventory()
-        self.weapon = Weapon()
+        self.weapon = None
 
     def move(self, x,y):
 
@@ -65,21 +78,33 @@ class Hero(Character):
             self.position = position
 
     
-    def pick_up_item(self, item):
-        print(f"{self.name} подобрал {item}")
-        self.inventory.add_item(item)
+    def pick_up_item(self):
+        direction = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        for x, y  in direction:
+            index = next((i for i, p in enumerate(self.game_map.map) if p == Point(self.position.x+x, self.position.y+y)), None)
+            if index == None:
+                continue
+            point = self.game_map.map[index]
+            if point.shaded == "1":
+                self.inventory.add_item(Part_weapon())
+                point.shaded = None
+        
+        
 
-    def check_for_weapon_spawn(self, required_items):
-        if self.inventory.has_all_items(required_items):
-            self.weapon = Weapon()
-            print(f"Вы собрали все необходимые предметы! Теперь у вас есть {self.weapon}.")
+    def check_for_weapon_spawn(self):
+        part_count = 0
+        for item in self.inventory.items:
+            if isinstance(item, Part_weapon):
+                part_count += 1
+
+        if part_count == 3:
+            self.weapon = Weapon("Меч", "⚔️", 50)
+            self.inventory.items = []
 
     def attack(self, enemy):
-        if self.weapon:
-            print(f"{self.name} атакует {enemy.name} с {self.weapon}!")
-            enemy.take_damage(self.weapon.damage)
-        else:
-            print(f"{self.name} пытается атаковать, но у него нет оружия!")
+        if enemy is not None:
+            if self.weapon and self.is_adjacent(enemy):
+                enemy.take_damage(self.weapon.damage)
     
     def on_exit(self):
         if self.position.symbol == self.game_map.exit_view:
@@ -91,8 +116,10 @@ class Hero(Character):
 class Enemy(Character):
 
     damage: int
+    attack_duration: int = 0
     
-    def __init__(self, name, map, max_health=100):
+    def __init__(self, name, map, max_health=100, damage=30):
+        self.damage = damage
         super().__init__(name, map , max_health, "E")
 
     def move_randomly(self):
@@ -111,5 +138,11 @@ class Enemy(Character):
             self.position = position
 
     def attack(self, hero):
-        print(f"{self.name} атакует {hero.name}!")
-        hero.take_damage(self.damage)
+        if self.is_adjacent(hero):
+            if self.attack_duration % 6 == 0:
+                hero.take_damage(self.damage)
+            self.attack_duration += 1
+
+
+
+

@@ -131,10 +131,24 @@ class Interface:
                 hero.move(0, 1)
             elif key == ord('e'):
                 self.__display_inventory(hero)
+            elif key == ord('f'):
+                hero.pick_up_item()
+                hero.check_for_weapon_spawn()
+            elif key == ord('r'):
+                hero.attack(enemy)
+                if enemy.is_dead:
+                    enemy = None
             elif key == ord('q'):
                 break
             
-            enemy.move_randomly()
+            if enemy is not None:
+                enemy.move_randomly()
+                enemy.attack(hero)
+
+            if hero.is_dead:
+                self.__lose_screen()
+                break
+
             if hero.on_exit():
                 self.__win_screen()
                 break
@@ -235,11 +249,22 @@ class Interface:
         self.stdscr.clear()
 
 
+    def __lose_screen(self):
+
+        self.stdscr.clear()
+        self.stdscr.addstr(0,0, "Вы проиграли!")
+        self.stdscr.refresh()
+
+        while True:
+            key = self.__get_input()
+            if key == ord(' '):
+                break
+
     def __draw_inventory_slot(self, x, y, item=None):
 
         self.stdscr.addstr(y, x, "╔═══╗")
         if item is not None:
-            self.stdscr.addstr(y + 1, x, f"║ {str(item)} ║")
+            self.stdscr.addstr(y + 1, x, f"║ {item.view} ║")
         else:
             self.stdscr.addstr(y + 1, x, "║   ║")
         self.stdscr.addstr(y + 2, x, "╚═══╝")
@@ -283,7 +308,7 @@ class Interface:
                 f"║ {'Статистика'.center(map.width)} ║",
                 f"║ {('Здоровье:' + str(hero.current_health) + '/' + str(hero.max_health)).ljust(map.width)} ║",
                 f"║ {('█' * int((hero.current_health / hero.max_health) * map.width) + '░' * (map.width - int((hero.current_health / hero.max_health) * map.width))).ljust(map.width)} ║",
-                f"║ {('Оружие:' + str(hero.weapon)).ljust(map.width)} ║",
+                f"║ {('Оружие:' + str('Нету' if hero.weapon is None else hero.weapon.name)).ljust(map.width)} ║",
                 f"╚" + "═" * (map.width+2) + "╝",
                 ]
 
