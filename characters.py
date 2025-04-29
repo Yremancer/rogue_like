@@ -21,10 +21,11 @@ class Character(ABC):
         self.current_health = max_health
 
         available_points = [point for room in self.game_map.rooms for point in room.coordinates]
-        self.position = random.choice(available_points)
+        position = random.choice(available_points)
 
-        index = game_map.map.index(self.position)
-        game_map.map[index] = ShadedPoint(self.position.x, self.position.y, self.view, )
+        index = game_map.map.index(position)
+        game_map.map[index] = ShadedPoint(position.x, position.y, position.symbol, self.view)
+        self.position = game_map.map[index]
     
     @abstractmethod
     def attack(self, enemy):
@@ -46,7 +47,7 @@ class Hero(Character):
     def __init__(self, name, map, max_health = 100):
         super().__init__(name, map,  max_health, "☻")
         self.inventory = Inventory()
-        self.weapon = None
+        self.weapon = Weapon()
 
     def move(self, x,y):
 
@@ -57,15 +58,11 @@ class Hero(Character):
 
         position = self.game_map.map[index]
 
-        if position.symbol == Room.view or position.symbol == Coridor.view:
+        if (position.symbol == Room.view or position.symbol == Coridor.view) and position.shaded == None:
 
-            index = self.game_map.map.index(self.position)
-            self.game_map.map[index] = self.position
-
+            self.position.shaded = None
+            position.shaded = self.view
             self.position = position
-
-            index = self.game_map.map.index(self.position)
-            self.game_map.map[index] = ShadedPoint(self.position.x, self.position.y, self.view)
 
     
     def pick_up_item(self, item):
@@ -101,15 +98,11 @@ class Enemy(Character):
 
         position = self.game_map.map[index]
 
-        if position.symbol == Room.view or position.symbol == Coridor.view:
+        if (position.symbol == Room.view or position.symbol == Coridor.view) and position.shaded == None:
 
-            index = self.game_map.map.index(self.position)
-            self.game_map.map[index] = self.position
-
+            self.position.shaded = None
+            position.shaded = self.view
             self.position = position
-
-            index = self.game_map.map.index(self.position)
-            self.game_map.map[index] = ShadedPoint(self.position.x, self.position.y, self.view)
 
     def attack(self, hero):
         print(f"{self.name} атакует {hero.name}!")
