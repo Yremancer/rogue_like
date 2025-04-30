@@ -36,7 +36,6 @@ class Character(ABC):
     
     def __dead(self):
         self.position.shaded = None
-        self.position = None
         self.is_dead = True
 
     def take_damage(self, damage):
@@ -81,20 +80,22 @@ class Hero(Character):
     def pick_up_item(self):
         direction = [(1, 0), (-1, 0), (0, 1), (0, -1)]
         for x, y  in direction:
-            index = next((i for i, p in enumerate(self.game_map.map) if p == Point(self.position.x+x, self.position.y+y)), None)
+            index = next((i for i, it in enumerate(self.game_map.items) if it.position == Point(self.position.x+x, self.position.y+y)), None)
             if index == None:
                 continue
-            point = self.game_map.map[index]
-            if point.shaded == "1":
-                self.inventory.add_item(Part_weapon())
-                point.shaded = None
-        
-        
+            item = self.game_map.items[index]
 
-    def check_for_weapon_spawn(self):
+            self.inventory.add_item(item)
+            item.position.shaded = None
+            item.position = None
+            self.game_map.items.remove(item)
+            self.__check_for_weapon_spawn()
+
+        
+    def __check_for_weapon_spawn(self):
         part_count = 0
         for item in self.inventory.items:
-            if isinstance(item, Part_weapon):
+            if isinstance(item, Part_Weapon):
                 part_count += 1
 
         if part_count == 3:
@@ -107,8 +108,11 @@ class Hero(Character):
                 enemy.take_damage(self.weapon.damage)
     
     def on_exit(self):
-        if self.position.symbol == self.game_map.exit_view:
-            return True
+        if any(isinstance(x, Key) for x in self.inventory.items):
+            if self.position.symbol == self.game_map.exit_view:
+                return True
+            else:
+                return False
         return False
 
         
@@ -139,7 +143,7 @@ class Enemy(Character):
 
     def attack(self, hero):
         if self.is_adjacent(hero):
-            if self.attack_duration % 6 == 0:
+            if self.attack_duration % 5 == 0:
                 hero.take_damage(self.damage)
             self.attack_duration += 1
 

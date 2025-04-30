@@ -133,11 +133,12 @@ class Interface:
                 self.__display_inventory(hero)
             elif key == ord('f'):
                 hero.pick_up_item()
-                hero.check_for_weapon_spawn()
-            elif key == ord('r'):
+            elif key == ord('r') and enemy is not None:
                 hero.attack(enemy)
                 if enemy.is_dead:
+                    map.spawn_key(enemy.position)
                     enemy = None
+
             elif key == ord('q'):
                 break
             
@@ -332,7 +333,7 @@ class Interface:
         guide = [
                 "Управление:",
                 "w - вверх, s - вниз, a - влево, d - вправо",
-                "e - инвентарь",
+                "e - инвентарь, f - подобрать, r - атаковать",
                 "q - выход"
             ]
 

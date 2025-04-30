@@ -1,13 +1,18 @@
 from abc import ABC, abstractmethod
-
+from points import *
 
 class Item(ABC):
     view: str
+    position: ShadedPoint
     def __init__(self, view = None):
         self.view = view
 
 
-class Part_weapon(Item):
+class Key(Item):
+    def __init__(self):
+        super().__init__("K")
+
+class Part_Weapon(Item):
     def __init__(self):
         super().__init__("1")
 

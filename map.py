@@ -67,6 +67,7 @@ class Map:
     room_count: int
     rooms: list[Room]
     coridors: list[Coridor]
+    items: list[Item]
     map: list[ShadedPoint]
 
     def __init__(self, room_count, width, height, room_width, room_height):
@@ -75,6 +76,7 @@ class Map:
         self.room_count = room_count
         self.rooms = []
         self.coridors = []
+        self.items = []
         self.map = []
 
         for y in range(1, self.height+1):
@@ -243,13 +245,17 @@ class Map:
             for point in room.coordinates:
                 possible_points.append(point)
 
-        spawn_items_count = 0
-
-        while spawn_items_count < 3:
+        while len(self.items) < 3:
             point = random.choice(possible_points)
-            item = Part_weapon()
+            item = Part_Weapon()
             index = self.map.index(point)
             if self.map[index].shaded is None:
                 self.map[index] = ShadedPoint(point.x, point.y, point.symbol, item.view)
-                spawn_items_count += 1
-        
+                item.position = self.map[index]
+                self.items.append(item)
+    
+    def spawn_key(self, point):
+        key = Key()
+        point.shaded = "K"
+        key.position = point
+        self.items.append(key)
