@@ -129,6 +129,7 @@ class Enemy(Character):
 
     damage: int
     __attack_duration: int = 0
+    __move_path = []
     
     def __init__(self, name, map, max_health=100, damage=30):
         self.damage = damage
@@ -154,20 +155,112 @@ class Enemy(Character):
             if self.__attack_duration % 5 == 0:
                 hero.take_damage(self.damage)
             self.__attack_duration += 1
+    
+    def move(self, x,y):
+
+        index = next((i for i, p in enumerate(self.game_map.map) if p == Point(self.position.x+x, self.position.y+y)), None)
+
+        if index == None:
+            return
+
+        position = self.game_map.map[index]
+
+        if position.symbol != Map.view and position.shaded == None:
+
+            self.position.shaded = None
+            position.shaded = self.view
+            self.position = position
+
+    def move_random(self):
+
+        if self.__move_path == []:
+            valid_points = []
+            for room in self.game_map.rooms:
+                for point in room.coordinates:
+                    if point.shaded is None:
+                        valid_points.append(point)
+            for coridor in self.game_map.coridors:
+                for point in coridor.path:
+                    if point.shaded is None:
+                        valid_points.append(point)
+
+            finish_point = random.choice(valid_points)
+            self.__move_path = self.__find_path(self.position, finish_point)
+
+        else:
+            move = self.__move_path[0]
+            self.move(move.x - self.position.x, move.y - self.position.y)
+            self.__move_path.remove(move)
+            
 
 
-    # def move_random(self):
+    def __find_path(self, start: Point, end: Point):
+        visited = []
+        open = [Node(start, h=_h_calculate(start, end))]
 
-    #     valid_points = []
-    #     for room in self.game_map.rooms:
-    #         for point in room.coordinates:
-    #             if point.shaded is None:
-    #                 valid_points.append(point)
-    #     for coridor in self.game_map.coridors:
-    #         for point in coridor.path:
-    #             if point.shaded is None:
-    #                 valid_points.append(point)
+        while len(open) != 0:
+            current_node = min(open, key=lambda node: node.f)
 
-    #     finish_point = random.choice(valid_points)
+            if current_node.content == end:
+                path = []
+                while current_node:
+                    path.append(current_node.content)
+                    current_node = current_node.previous
+                path.reverse()
+                return path
+            
+
+            open = [node for node in open if node.content != current_node.content]
+            visited.append(current_node)
+            
+
+            for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+
+                x = current_node.content.x + dx
+                y = current_node.content.y + dy
+                
+                
+                if any(node.content.x == x and node.content.y == y for node in visited):
+                    continue
+                    
+                
+                if 1 <= x <= self.game_map.width and 1 <= y <= self.game_map.height:
+                    
+                    point = next((p for p in self.game_map.map if p.x == x and p.y == y), None)
+                    
+                    if point is None or (point.symbol == Map.view and (point.x, point.y) != (end.x, end.y)):
+                        continue
+                    
+
+                    new_node = Node(
+                        point,
+                        current_node,
+                        current_node.g + 1,
+                        _h_calculate(point, end)
+                    )
+                    
+                    existing_node = next((node for node in open if node.content == point), None)
+                    
+                    if existing_node is None or existing_node.f > new_node.f:
+                        if existing_node:
+                            open.remove(existing_node)
+                        open.append(new_node)
+
+        print("Путь не найден!")
+        return []
 
 
+class Node:
+
+    def __init__(self, content, previous = None, g = 0, h = 0):
+        self.content = content
+        self.previous = previous
+        self.g = g
+        self.h = h
+    
+    @property
+    def f(self):
+        return self.g + self.h
+
+def _h_calculate(current: Point, end: Point):
+    return abs(current.x-end.x) + abs(current.y - end.y)

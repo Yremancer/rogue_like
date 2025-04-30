@@ -157,7 +157,7 @@ class Interface:
                 break
             
             if enemy is not None:
-                enemy.move_randomly()
+                enemy.move_random()
                 enemy.attack(hero)
 
             if hero.is_dead:
