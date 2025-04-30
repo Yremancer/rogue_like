@@ -1,6 +1,7 @@
 from points import *
 from items import *
 
+
 __all__ = ['Room', 'Coridor', 'Map', 'Point', 'ShadedPoint']
 
 class Node:

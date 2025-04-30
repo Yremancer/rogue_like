@@ -2,6 +2,7 @@ from map import *
 from points import *
 from abc import ABC, abstractmethod
 from items import *
+from notifications import *
 import time
 
 class Character(ABC):
@@ -78,6 +79,7 @@ class Hero(Character):
 
     
     def pick_up_item(self):
+        notifications = []
         direction = [(1, 0), (-1, 0), (0, 1), (0, -1)]
         for x, y  in direction:
             index = next((i for i, it in enumerate(self.game_map.items) if it.position == Point(self.position.x+x, self.position.y+y)), None)
@@ -89,7 +91,11 @@ class Hero(Character):
             item.position.shaded = None
             item.position = None
             self.game_map.items.remove(item)
-            self.__check_for_weapon_spawn()
+            notifications.append(Notification(f"Вы подобрали {item.name}!", 10))
+            if self.__check_for_weapon_spawn():
+                notifications.append(Notification(f"Вы собрали оружие!", 10))
+            return notifications
+
 
         
     def __check_for_weapon_spawn(self):
@@ -101,26 +107,28 @@ class Hero(Character):
         if part_count == 3:
             self.weapon = Weapon("Меч", "⚔️", 50)
             self.inventory.items = []
+            return True
 
     def attack(self, enemy):
         if enemy is not None:
             if self.weapon and self.is_adjacent(enemy):
                 enemy.take_damage(self.weapon.damage)
+                return Notification(f"Вы нанесли врагу {self.weapon.damage} урона!", 10)
     
     def on_exit(self):
-        if any(isinstance(x, Key) for x in self.inventory.items):
-            if self.position.symbol == self.game_map.exit_view:
-                return True
+        if self.position.symbol == self.game_map.exit_view:
+            if any(isinstance(x, Key) for x in self.inventory.items):
+                return (True, None)
             else:
-                return False
-        return False
+                return (False, Notification("У вас нет ключа, чтобы выйти!", 15))
+        return (False, None)
 
         
 
 class Enemy(Character):
 
     damage: int
-    attack_duration: int = 0
+    __attack_duration: int = 0
     
     def __init__(self, name, map, max_health=100, damage=30):
         self.damage = damage
@@ -143,10 +151,23 @@ class Enemy(Character):
 
     def attack(self, hero):
         if self.is_adjacent(hero):
-            if self.attack_duration % 5 == 0:
+            if self.__attack_duration % 5 == 0:
                 hero.take_damage(self.damage)
-            self.attack_duration += 1
+            self.__attack_duration += 1
 
 
+    # def move_random(self):
+
+    #     valid_points = []
+    #     for room in self.game_map.rooms:
+    #         for point in room.coordinates:
+    #             if point.shaded is None:
+    #                 valid_points.append(point)
+    #     for coridor in self.game_map.coridors:
+    #         for point in coridor.path:
+    #             if point.shaded is None:
+    #                 valid_points.append(point)
+
+    #     finish_point = random.choice(valid_points)
 
 

@@ -2,28 +2,29 @@ from abc import ABC, abstractmethod
 from points import *
 
 class Item(ABC):
+    name: str
     view: str
     position: ShadedPoint
-    def __init__(self, view = None):
+    def __init__(self, view = None, name = None):
         self.view = view
+        self.name = name
 
 
 class Key(Item):
     def __init__(self):
-        super().__init__("K")
+        super().__init__("K", "ключ")
 
 class Part_Weapon(Item):
     def __init__(self):
-        super().__init__("1")
+        super().__init__("1", "часть оружия")
 
 class Weapon(Item):
-    name: str
     damage: int
 
     def __init__(self, name, view, damage = 10):
         self.name = name
         self.damage = damage
-        super().__init__(view)
+        super().__init__(view, "оружие")
 
 class Inventory:
 

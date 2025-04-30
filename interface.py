@@ -1,5 +1,6 @@
 import curses
-
+from notifications import *
+import time
 class Interface:
 
     def __init__(self, stdscr):
@@ -109,8 +110,12 @@ class Interface:
         curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
         curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
 
+        notifications = [] 
 
         while True:
+
+            
+
             self.__update_visibility(map, hero)
 
             last_point_y = 0
@@ -118,11 +123,11 @@ class Interface:
             last_point_y = self.__draw_statistic(map, hero, last_point_y)
             last_point_y = self.__draw_guide(last_point_y)
 
+
             key = self.__get_input()
 
             if key == ord('d'):
                 hero.move(1, 0)
-                # hero.take_damage(50)
             elif key == ord('a'):
                 hero.move(-1, 0)
             elif key == ord('w'):
@@ -132,10 +137,19 @@ class Interface:
             elif key == ord('e'):
                 self.__display_inventory(hero)
             elif key == ord('f'):
-                hero.pick_up_item()
+
+                pick_notifications = hero.pick_up_item()
+                if pick_notifications is not None:
+                    notifications += pick_notifications
+
             elif key == ord('r') and enemy is not None:
-                hero.attack(enemy)
+
+                notification = hero.attack(enemy)
+                if notification is not None:
+                    notifications.append(notification)
+
                 if enemy.is_dead:
+                    notifications.append(Notification("Вы убили врага!", 10))
                     map.spawn_key(enemy.position)
                     enemy = None
 
@@ -149,10 +163,18 @@ class Interface:
             if hero.is_dead:
                 self.__lose_screen()
                 break
-
-            if hero.on_exit():
+            
+            hero_exit = hero.on_exit()
+            if hero_exit[0]:
                 self.__win_screen()
                 break
+            elif not hero_exit[0] and hero_exit[1] is not None:
+                notifications.append(hero_exit[1])
+                time.sleep(1)
+
+            self.__display_notification(notifications, last_point_y)
+
+            self.stdscr.refresh()
 
     def __display_inventory(self, hero):
         while True:
@@ -171,6 +193,17 @@ class Interface:
             if self.__get_input() == ord('q'):
                 self.stdscr.clear()
                 break
+
+    def __display_notification(self, notifications, last_point_y):
+        for i in range(5):
+                self.stdscr.addstr(last_point_y + 1 + i, 0, " " * 50)
+        for i, notification in enumerate(notifications):
+                self.stdscr.addstr(last_point_y + 1 + i, 0, notification.text)
+                if notification.lifetime > 0:
+                    notification.lifetime -= 1
+                else:
+                    notifications.remove(notification)
+
 
     def __win_screen(self):
         # Инициализация цветовых пар
@@ -252,14 +285,82 @@ class Interface:
 
     def __lose_screen(self):
 
-        self.stdscr.clear()
-        self.stdscr.addstr(0,0, "Вы проиграли!")
-        self.stdscr.refresh()
+        # Инициализация цветовых пар
+        curses.init_pair(3, curses.COLOR_RED, curses.COLOR_BLACK)
+        curses.init_pair(4, curses.COLOR_BLUE, curses.COLOR_BLACK)
+        curses.init_pair(5, curses.COLOR_RED, curses.COLOR_BLACK)
+        curses.init_pair(6, curses.COLOR_RED, curses.COLOR_BLACK)
 
+        # Текст "ПРОИГРЫШЬ!" большими буквами
+        lose_text = [
+            "██████╗ ██████╗  ██████╗ ██╗ ██████╗ ██████╗ ██╗  ██╗",
+            "██╔══██╗██╔══██╗██╔═══██╗██║██╔════╝ ██╔══██╗██║  ██║",
+            "██████╔╝██████╔╝██║   ██║██║██║  ███╗██████╔╝███████║",
+            "██╔═══╝ ██╔═══╝ ██║   ██║██║██║   ██║██╔═══╝ ╚════██║",
+            "██║     ██║     ╚██████╔╝██║╚██████╔╝██║          ██║",
+            "╚═╝     ╚═╝      ╚═════╝ ╚═╝ ╚═════╝ ╚═╝          ╚═╝",
+        ]
+
+        footer_text = "✧ Нажмите 'пробел' для выхода ✧"
+
+        # Украшения
+        decorations = "💧 😢 💔 ⚰️ 🥀 💀 💧 😢 💔 ⚰️ 🥀 💀"
+        sparkles = "｡･ﾟﾟ･｡･ﾟ✧･ﾟ･｡･ﾟﾟ･｡･ﾟ✧･ﾟ･｡"
+
+        # Центрирование текста
+        screen_height, screen_width = self.stdscr.getmaxyx()
+        start_y = (screen_height - len(lose_text)) // 2
+        start_x = (screen_width - len(lose_text[0])) // 2
+
+        animation_counter = 0
         while True:
+            self.stdscr.clear()
+
+            # Отрисовка верхних и нижних украшений
+            for i, char in enumerate(decorations):
+                color = 3 + ((i + animation_counter) % 4)
+                try:
+                    # Верхние украшения
+                    self.stdscr.addstr(start_y - 2, start_x + i * 4, char, curses.color_pair(color))
+                    # Нижние украшения
+                    self.stdscr.addstr(start_y + len(lose_text) + 2, start_x + i * 4, char, curses.color_pair(color))
+                except curses.error:
+                    pass
+
+            # Отрисовка боковых мерцающих искр
+            for i, spark in enumerate(sparkles):
+                color = 3 + ((i + animation_counter) % 4)
+                try:
+                    # Левая сторона
+                    self.stdscr.addstr(start_y + i % len(lose_text), start_x - 6, spark, curses.color_pair(color))
+                    # Правая сторона
+                    self.stdscr.addstr(start_y + i % len(lose_text), start_x + len(lose_text[0]) + 4, spark, curses.color_pair(color))
+                except curses.error:
+                    pass
+
+            # Отрисовка текста "ПРОИГРЫШЬ!"
+            for i, line in enumerate(lose_text):
+                try:
+                    self.stdscr.addstr(start_y + i, start_x, line, curses.color_pair(5 if i % 2 == 0 else 6))
+                except curses.error:
+                    pass
+
+            # Отрисовка текста для выхода
+            try:
+                self.stdscr.addstr(start_y + len(lose_text) + 4, start_x - len(footer_text) // 2 + len(lose_text[0]) // 2, footer_text, curses.color_pair(4))
+            except curses.error:
+                pass
+
+            self.stdscr.refresh()
+            animation_counter += 1
+
+            # Проверка выхода
             key = self.__get_input()
             if key == ord(' '):
                 break
+
+        self.stdscr.clear()
+
 
     def __draw_inventory_slot(self, x, y, item=None):
 
@@ -300,7 +401,7 @@ class Interface:
                 else:
                     self.stdscr.addstr(point.y, point.x, point.symbol)                    
             self.stdscr.refresh()
-        return last_point_y
+        return last_point_y + 1
 
 
     def __draw_statistic(self, map, hero, last_point_y):
@@ -309,12 +410,11 @@ class Interface:
                 f"║ {'Статистика'.center(map.width)} ║",
                 f"║ {('Здоровье:' + str(hero.current_health) + '/' + str(hero.max_health)).ljust(map.width)} ║",
                 f"║ {('█' * int((hero.current_health / hero.max_health) * map.width) + '░' * (map.width - int((hero.current_health / hero.max_health) * map.width))).ljust(map.width)} ║",
-                f"║ {('Оружие:' + str('Нету' if hero.weapon is None else hero.weapon.name)).ljust(map.width)} ║",
+                f"║ {('Оружие: ' + str('Нету' if hero.weapon is None else hero.weapon.name)).ljust(map.width)} ║",
                 f"╚" + "═" * (map.width+2) + "╝",
                 ]
 
         for y, string in enumerate(statistics):
-                last_point_y += 1
                 if y == 3:
                     for x, char in enumerate(string):
                         if char == '█':
@@ -325,6 +425,7 @@ class Interface:
                             self.stdscr.addstr(last_point_y + 1, x, char)
                 else:
                         self.stdscr.addstr(last_point_y + 1, 0, string)
+                last_point_y += 1
         return last_point_y
     
 
@@ -338,6 +439,7 @@ class Interface:
             ]
 
         for y, string in enumerate(guide):
-                last_point_y += 1
                 self.stdscr.addstr(last_point_y + 1, 0, string)
+                last_point_y += 1
         self.stdscr.refresh()
+        return last_point_y
